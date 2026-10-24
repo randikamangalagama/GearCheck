@@ -1,0 +1,137 @@
+You are an expert React Native (Expo) developer and a senior UI/UX designer. Build a complete, production-quality Android mobile app called "GearCheck" for a photography/videography studio. Build it step by step, and at the end give me the exact steps to generate an installable APK file.
+
+═══════════════════════════════
+1. PURPOSE OF THE APP
+═══════════════════════════════
+A photo studio takes camera equipment to outside events (weddings, functions). Equipment often gets forgotten or lost. This app solves that with a two-stage checklist:
+
+STAGE 1 – GEAR INVENTORY
+The user adds ALL their studio gear to the app once (camera bodies, lenses, flashes, batteries, memory cards, tripods, gimbals, lights, cables, bags, etc.), grouped by category.
+
+STAGE 2 – EVENT PACKING FLOW
+For every function/event:
+  a) CREATE EVENT: name, date, venue, notes.
+  b) SELECT GEAR: user picks which gear items are going to this event from the inventory (checkbox multi-select, with search + category filter + "select all in category").
+  c) PACK CHECKLIST (leaving the studio): the selected items appear as a checklist. User ticks each item as it is packed into the bag. Show a progress bar (e.g. 12/20 packed). When all are ticked, show a "Ready to go" success animation.
+  d) RETURN CHECKLIST (after the event): when the user is back, the same items appear again. User ticks each item as it is returned. 
+  e) FINAL STATUS MESSAGE:
+     - If everything is ticked → show a beautiful success screen: "All gear returned safely ✅".
+     - If anything is NOT ticked → show a warning screen: "⚠ Missing items" with the list of missing items (name + category) so the user knows exactly what was lost or left behind.
+  f) Save event history (completed events with status: Complete / Items Missing).
+
+═══════════════════════════════
+2. SCREENS & NAVIGATION
+═══════════════════════════════
+Use React Navigation (bottom tabs + stack).
+
+Bottom Tabs:
+  1. Home (Dashboard): upcoming/active events, quick stats (total gear, events this month, missing items count), big "+ New Event" button.
+  2. Gear (Inventory): list grouped by category, search, add/edit/delete gear, category management, optional quantity field and optional notes.
+  3. Events: tabs → Upcoming | In Progress | Completed.
+  4. Settings: dark/light/system theme toggle, app info, export/backup data (JSON), clear data option.
+
+Stack screens:
+  - Add/Edit Gear
+  - Create Event
+  - Select Gear for Event
+  - Pack Checklist
+  - Return Checklist
+  - Result Screen (Success / Missing items)
+  - Event Details (history view)
+
+═══════════════════════════════
+3. FEATURES (DETAILED)
+═══════════════════════════════
+- Quantity support (e.g. "Battery x4", user ticks each unit or marks quantity packed).
+- Default categories: Cameras, Lenses, Flashes & Lights, Batteries & Chargers, Memory Cards, Tripods & Gimbals, Audio, Bags & Cases, Cables & Accessories, Other. User can add custom categories.
+- "Event Templates": save a gear selection as a template (e.g. "Wedding Full Set", "Pre-shoot Set") and reuse it when creating new events.
+- Duplicate a previous event's gear list.
+- Swipe actions, long-press to multi-select.
+- Haptic feedback on tick (expo-haptics).
+- Offline-first: all data stored locally using AsyncStorage or expo-sqlite (prefer expo-sqlite or zustand with persist). No login/no internet needed.
+- Local notification reminder (expo-notifications): reminder the evening before an event "Pack your gear for tomorrow's event" and a reminder after the event "Don't forget to do the return check".
+- Empty states with friendly illustrations/icons and helpful text.
+- Confirmation dialogs for delete actions.
+- Form validation.
+
+═══════════════════════════════
+4. UI / UX DESIGN REQUIREMENTS
+═══════════════════════════════
+- Style: Professional, clean, MINIMALIST, modern (inspired by Linear / Notion / Apple Reminders). No clutter.
+- Fully responsive: must look great on small phones, large phones and tablets (use flexible layouts, useWindowDimensions, safe area, no hardcoded pixel widths).
+- DARK THEME + LIGHT THEME with smooth switching and a system-default option. Build a central theme file (colors, spacing, radius, typography).
+- Dark theme palette: deep charcoal background (#0E0F13), surface (#17181D), elevated surface (#1F2128), border (#2A2C35), primary accent (a refined indigo/violet like #6C63FF), success (#2ECC71), warning (#F5A524), danger (#FF5C5C), text primary (#F2F3F7), text secondary (#9A9DAB).
+- Light theme: clean white/soft grey equivalents with the same accent.
+- Typography: use a clean modern font (Inter via expo-google-fonts). Clear hierarchy.
+- Rounded cards (radius 16–20), generous spacing, soft shadows in light mode, subtle borders in dark mode.
+- ANIMATIONS (use react-native-reanimated + moti or Animated API, keep smooth 60fps and subtle):
+    • Screen transitions (fade/slide)
+    • Animated checkbox with a satisfying tick + scale bounce
+    • Animated progress bar/circular progress when packing
+    • List items fade-in/stagger on load
+    • Press feedback (scale down on touch)
+    • Success screen: animated checkmark / confetti (lottie or reanimated)
+    • Warning screen: gentle shake/pulse on the alert icon
+    • Smooth theme transition
+- Icons: use @expo/vector-icons (Feather or Ionicons) – consistent set.
+- Floating Action Button where suitable.
+- Accessible: good contrast, large touch targets (min 44px).
+- Language: English UI (code structure ready for easy translation later).
+
+═══════════════════════════════
+5. TECH STACK
+═══════════════════════════════
+- React Native with Expo (managed workflow, latest stable SDK), TypeScript.
+- React Navigation (native-stack + bottom-tabs).
+- State management: Zustand with persist middleware (local storage).
+- react-native-reanimated, react-native-gesture-handler, expo-haptics, expo-notifications, @expo/vector-icons, react-native-safe-area-context, lottie-react-native (optional).
+- Clean folder structure:
+    /src
+      /components (Button, Card, Checkbox, ProgressBar, EmptyState, Header, etc.)
+      /screens
+      /navigation
+      /store
+      /theme
+      /utils
+      /types
+- Reusable components, clean code, comments, no unused code.
+
+═══════════════════════════════
+6. DATA MODEL
+═══════════════════════════════
+GearItem { id, name, categoryId, quantity, notes, createdAt }
+Category { id, name, icon, isCustom }
+Event { id, title, date, venue, notes, status: 'upcoming' | 'packing' | 'out' | 'returning' | 'completed', gearSelections: [{gearId, quantity, packed: boolean, returned: boolean}], result: 'complete' | 'missing' | null, createdAt, completedAt }
+Template { id, name, gearIds[] }
+
+═══════════════════════════════
+7. HOW TO BUILD (FOLLOW STEP BY STEP)
+═══════════════════════════════
+Build in this order and confirm each step works before moving on:
+  Step 1: Project setup, dependencies, folder structure, theme system (dark/light).
+  Step 2: Navigation structure with bottom tabs + stack.
+  Step 3: Zustand store with persistence + seed default categories.
+  Step 4: Gear inventory screens (add/edit/delete/search/group by category).
+  Step 5: Event creation + gear selection screen.
+  Step 6: Pack checklist screen with animated checkbox + progress.
+  Step 7: Return checklist screen.
+  Step 8: Result screens (success / missing items list).
+  Step 9: Home dashboard, events list, history, templates.
+  Step 10: Settings (theme, backup export), notifications.
+  Step 11: Animations, haptics, polish, empty states, responsive testing.
+  Step 12: Final bug check and cleanup.
+
+═══════════════════════════════
+8. APK BUILD INSTRUCTIONS (REQUIRED AT THE END)
+═══════════════════════════════
+After the app is complete, give me clear step-by-step instructions that I can run in the Replit Shell to generate an installable Android APK file, including:
+  1. Setting app name, package name (e.g. com.studio.gearcheck), version, icon and splash screen in app.json.
+  2. Installing EAS CLI (npm install -g eas-cli) and logging in (eas login) – explain how to create a free Expo account.
+  3. Creating eas.json with a build profile that outputs an APK (buildType: "apk") — "preview" profile.
+  4. Running: eas build -p android --profile preview
+  5. How to download the APK from the build link/QR code and install it on my Android phone (enable "Install unknown apps").
+  6. Alternative: local build option using "eas build --local" or "npx expo prebuild" + Gradle (./gradlew assembleRelease), with the exact commands and the path where the APK is generated.
+  7. Common errors and fixes (login issues, missing credentials, memory issues in Replit).
+Write every command clearly so a beginner can follow.
+
+Start now with Step 1. After each step, briefly tell me what was done, then continue to the next step automatically. Make the final app feel like a premium, polished product.

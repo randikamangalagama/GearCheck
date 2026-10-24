@@ -1,44 +1,51 @@
-# [Project name]
+# GearCheck
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An offline-first Android app for photography and videography studios to inventory gear, pack for events, and verify returns.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/gearcheck run dev` — start the Expo mobile app
+- `pnpm --filter @workspace/gearcheck run typecheck` — typecheck GearCheck
+- `pnpm run typecheck` — typecheck all workspace packages
+- Scan the Expo QR code with Expo Go to preview on a phone.
+- GearCheck does not require the API server, a database, an account, or an internet connection for normal use.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- pnpm workspace, Expo SDK 57, React Native, TypeScript
+- Expo Router for stack and bottom-tab navigation
+- AsyncStorage for on-device persistence
+- Expo Notifications for optional local event reminders
+- Reanimated and Expo Haptics for checklist feedback
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/gearcheck/app/` — app routes and tab screens
+- `artifacts/gearcheck/context/GearCheckContext.tsx` — local data, persistence, and event actions
+- `artifacts/gearcheck/components/` — shared controls and packing/return checklist
+- `artifacts/gearcheck/constants/colors.ts` — light and dark theme tokens
+- `artifacts/gearcheck/app.json` — app identity, Android package, icon, and native plugins
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Keep inventory, events, templates, and preferences on-device so event checklists work offline.
+- Copy item names and categories into each event selection so later inventory edits do not rewrite event history.
+- Gear selection and checklists track quantities as unit counts, not only item-level booleans.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+GearCheck helps photo and video crews avoid forgotten or missing equipment at off-site events. Users maintain a categorized inventory, create event-specific packing lists, check gear back in, save reusable templates, export JSON backups, and review completed event history.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Minimal, professional English interface with system, light, and dark appearance modes.
+- Android is the target platform; the requested app ID is `com.studio.gearcheck`.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Keep the Expo config in static `app.json`; dynamic app config files break the managed mobile build flow.
+- Treat the Android package identifier as fixed after initial setup.
+- No API or database migration is needed for GearCheck changes.
 
 ## Pointers
 

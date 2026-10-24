@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "GearCheck",
+    "slug": "gearcheck",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "gearcheck",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F6F6F9"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.studio.gearcheck"
+    },
+    "android": {
+      "package": "com.studio.gearcheck",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#17181D"
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "gear-reminders"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
