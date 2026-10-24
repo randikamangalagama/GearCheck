@@ -3,8 +3,7 @@ export type EventStatus =
   | 'upcoming'
   | 'packing'
   | 'out'
-  | 'returning'
-  | 'completed';
+  | 'returning';
 export type EventResult = 'complete' | 'missing' | null;
 
 export interface Category {
@@ -46,6 +45,7 @@ export interface GearEvent {
   id: string;
   title: string;
   date: string;
+  time: string;
   venue: string;
   notes: string;
   status: EventStatus;
@@ -53,7 +53,6 @@ export interface GearEvent {
   result: EventResult;
   missingItems: MissingGearItem[];
   createdAt: string;
-  completedAt?: string;
   reminderIds: string[];
 }
 
@@ -87,6 +86,7 @@ export interface GearInput {
 export interface EventDraft {
   title: string;
   date: string;
+  time: string;
   venue: string;
   notes: string;
 }

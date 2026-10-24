@@ -35,7 +35,8 @@
         {
           "defaultChannel": "gear-reminders"
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true,

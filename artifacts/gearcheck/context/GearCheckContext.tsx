@@ -1,14 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import React, { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
+import { DEFAULT_CATEGORIES, freshData, useAppDataStore } from '@/store/appData';
 import {
   cancelReminderIds,
   requestReminderPermission,
@@ -26,33 +18,10 @@ import type {
   ThemeMode,
 } from '@/types';
 
-const STORAGE_KEY = '@gearcheck/data-v1';
-
-export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'cameras', name: 'Cameras', icon: 'camera', isCustom: false },
-  { id: 'lenses', name: 'Lenses', icon: 'circle', isCustom: false },
-  { id: 'flashes-lights', name: 'Flashes & Lights', icon: 'zap', isCustom: false },
-  { id: 'batteries-chargers', name: 'Batteries & Chargers', icon: 'battery-charging', isCustom: false },
-  { id: 'memory-cards', name: 'Memory Cards', icon: 'credit-card', isCustom: false },
-  { id: 'tripods-gimbals', name: 'Tripods & Gimbals', icon: 'sliders', isCustom: false },
-  { id: 'audio', name: 'Audio', icon: 'mic', isCustom: false },
-  { id: 'bags-cases', name: 'Bags & Cases', icon: 'briefcase', isCustom: false },
-  { id: 'cables-accessories', name: 'Cables & Accessories', icon: 'link', isCustom: false },
-  { id: 'other', name: 'Other', icon: 'box', isCustom: false },
-];
+export { DEFAULT_CATEGORIES };
 
 function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function freshData(): AppData {
-  return {
-    categories: DEFAULT_CATEGORIES,
-    gear: [],
-    events: [],
-    templates: [],
-    settings: { themeMode: 'system', remindersEnabled: false },
-  };
 }
 
 interface GearCheckContextValue {
@@ -66,6 +35,8 @@ interface GearCheckContextValue {
   createCategory: (name: string) => boolean;
   deleteCategory: (id: string) => void;
   createEvent: (draft: EventDraft, selections: GearSelection[]) => Promise<string>;
+  updateEvent: (id: string, draft: EventDraft) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
   setPackedQuantity: (eventId: string, gearId: string, quantity: number) => void;
   setReturnedQuantity: (eventId: string, gearId: string, quantity: number) => void;
   startReturn: (eventId: string) => void;
@@ -79,59 +50,14 @@ interface GearCheckContextValue {
 
 const GearCheckContext = createContext<GearCheckContextValue | null>(null);
 
-function restoreData(raw: string | null): AppData {
-  if (!raw) return freshData();
-  const parsed = JSON.parse(raw) as Partial<AppData>;
-  return {
-    categories:
-      Array.isArray(parsed.categories) && parsed.categories.length > 0
-        ? parsed.categories
-        : DEFAULT_CATEGORIES,
-    gear: Array.isArray(parsed.gear) ? parsed.gear : [],
-    events: Array.isArray(parsed.events) ? parsed.events : [],
-    templates: Array.isArray(parsed.templates) ? parsed.templates : [],
-    settings: {
-      themeMode:
-        parsed.settings?.themeMode === 'dark' ||
-        parsed.settings?.themeMode === 'light' ||
-        parsed.settings?.themeMode === 'system'
-          ? parsed.settings.themeMode
-          : 'system',
-      remindersEnabled: parsed.settings?.remindersEnabled === true,
-    },
-  };
-}
-
 export function GearCheckProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<AppData>(freshData);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [storageError, setStorageError] = useState<string | null>(null);
+  const data = useAppDataStore((state) => state.data);
+  const setData = useAppDataStore((state) => state.setData);
+  const isHydrated = useAppDataStore((state) => state.isHydrated);
+  const storageError = useAppDataStore((state) => state.storageError);
+  const setStorageError = useAppDataStore((state) => state.setStorageError);
   const nativeScheme = useColorScheme();
   const systemScheme = nativeScheme === 'dark' ? 'dark' : 'light';
-
-  useEffect(() => {
-    let active = true;
-    AsyncStorage.getItem(STORAGE_KEY)
-      .then((stored) => {
-        if (active) setData(restoreData(stored));
-      })
-      .catch(() => {
-        if (active) setStorageError('Saved data could not be read from this device.');
-      })
-      .finally(() => {
-        if (active) setIsHydrated(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(() => {
-      setStorageError('Changes could not be saved. Check device storage and try again.');
-    });
-  }, [data, isHydrated]);
 
   const createGear = useCallback((input: GearInput) => {
     const item: GearItem = {
@@ -214,6 +140,35 @@ export function GearCheckProvider({ children }: { children: ReactNode }) {
     return event.id;
   }, [data.settings.remindersEnabled]);
 
+  const updateEvent = useCallback(async (id: string, draft: EventDraft) => {
+    const existing = data.events.find((event) => event.id === id);
+    if (!existing) return;
+    await cancelReminderIds(existing.reminderIds);
+    const updated = { ...existing, ...draft, reminderIds: [] };
+    setData((current) => ({
+      ...current,
+      events: current.events.map((event) => event.id === id ? updated : event),
+    }));
+    if (data.settings.remindersEnabled) {
+      const reminderIds = await scheduleEventReminders(updated);
+      if (reminderIds.length > 0) {
+        setData((current) => ({
+          ...current,
+          events: current.events.map((event) => event.id === id ? { ...event, reminderIds } : event),
+        }));
+      }
+    }
+  }, [data.events, data.settings.remindersEnabled, setData]);
+
+  const deleteEvent = useCallback(async (id: string) => {
+    const event = data.events.find((item) => item.id === id);
+    if (event) await cancelReminderIds(event.reminderIds);
+    setData((current) => ({
+      ...current,
+      events: current.events.filter((item) => item.id !== id),
+    }));
+  }, [data.events, setData]);
+
   const setPackedQuantity = useCallback((eventId: string, gearId: string, quantity: number) => {
     setData((current) => ({
       ...current,
@@ -277,10 +232,9 @@ export function GearCheckProvider({ children }: { children: ReactNode }) {
         if (event.id !== eventId) return event;
         return {
           ...event,
-          status: 'completed',
+          status: 'returning',
           result: missingItems.length > 0 ? 'missing' : 'complete',
           missingItems,
-          completedAt: new Date().toISOString(),
         };
       }),
     }));
@@ -324,7 +278,7 @@ export function GearCheckProvider({ children }: { children: ReactNode }) {
       try {
         const granted = await requestReminderPermission();
         if (!granted) return false;
-        const upcomingEvents = data.events.filter((event) => event.status !== 'completed');
+        const upcomingEvents = data.events.filter((event) => event.result === null);
         const scheduled = await Promise.all(
           upcomingEvents.map(async (event) => ({
             eventId: event.id,
@@ -361,9 +315,8 @@ export function GearCheckProvider({ children }: { children: ReactNode }) {
     await Promise.all(data.events.map((event) => cancelReminderIds(event.reminderIds)));
     const reset = freshData();
     setData(reset);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(reset));
     setStorageError(null);
-  }, [data.events]);
+  }, [data.events, setData, setStorageError]);
 
   const value = useMemo<GearCheckContextValue>(
     () => ({
@@ -377,6 +330,8 @@ export function GearCheckProvider({ children }: { children: ReactNode }) {
       createCategory,
       deleteCategory,
       createEvent,
+      updateEvent,
+      deleteEvent,
       setPackedQuantity,
       setReturnedQuantity,
       startReturn,
@@ -398,6 +353,8 @@ export function GearCheckProvider({ children }: { children: ReactNode }) {
       createCategory,
       deleteCategory,
       createEvent,
+      updateEvent,
+      deleteEvent,
       setPackedQuantity,
       setReturnedQuantity,
       startReturn,
