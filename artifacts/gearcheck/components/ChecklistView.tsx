@@ -104,7 +104,7 @@ export function ChecklistView({ eventId, stage }: { eventId: string; stage: 'pac
           variant={stage === 'return' && !complete ? 'outline' : 'primary'}
           onPress={() => {
             if (stage === 'return') returnResult();
-            else router.replace({ pathname: '/event-details', params: { eventId: event.id } });
+            else router.replace('/(tabs)/events');
           }}
           testID={stage === 'pack' ? 'finish-packing-button' : 'finish-return-button'}
         />

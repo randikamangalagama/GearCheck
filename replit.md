@@ -14,14 +14,14 @@ An offline-first Android app for photography and videography studios to inventor
 
 - pnpm workspace, Expo SDK 57, React Native, TypeScript
 - Expo Router for stack and bottom-tab navigation
-- AsyncStorage for on-device persistence
+- Zustand with AsyncStorage persistence for on-device data
 - Expo Notifications for optional local event reminders
 - Reanimated and Expo Haptics for checklist feedback
 
 ## Where things live
 
 - `artifacts/gearcheck/app/` — app routes and tab screens
-- `artifacts/gearcheck/context/GearCheckContext.tsx` — local data, persistence, and event actions
+- `artifacts/gearcheck/store/appData.ts` and `context/GearCheckContext.tsx` — Zustand persistence and app actions
 - `artifacts/gearcheck/components/` — shared controls and packing/return checklist
 - `artifacts/gearcheck/constants/colors.ts` — light and dark theme tokens
 - `artifacts/gearcheck/app.json` — app identity, Android package, icon, and native plugins
@@ -29,16 +29,16 @@ An offline-first Android app for photography and videography studios to inventor
 ## Architecture decisions
 
 - Keep inventory, events, templates, and preferences on-device so event checklists work offline.
-- Copy item names and categories into each event selection so later inventory edits do not rewrite event history.
+- Snapshot gear names and categories into active event checklists; finishing an event deletes it and no event history is kept.
 - Gear selection and checklists track quantities as unit counts, not only item-level booleans.
 
 ## Product
 
-GearCheck helps photo and video crews avoid forgotten or missing equipment at off-site events. Users maintain a categorized inventory, create event-specific packing lists, check gear back in, save reusable templates, export JSON backups, and review completed event history.
+GearCheck helps photo and video crews avoid forgotten or missing equipment at off-site events. Users maintain a categorized inventory, create event-specific packing lists, check gear back in, save reusable templates, view events in a list or calendar, export JSON backups, and permanently remove each event after its return result is acknowledged.
 
 ## User preferences
 
-- Minimal, professional English interface with system, light, and dark appearance modes.
+- Minimal monochrome glass interface with system, light, and dark appearance modes.
 - Android is the target platform; the requested app ID is `com.studio.gearcheck`.
 
 ## Gotchas

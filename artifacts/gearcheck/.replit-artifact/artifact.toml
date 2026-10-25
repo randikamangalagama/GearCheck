@@ -1,7 +1,7 @@
 kind = "mobile"
 previewPath = "/"
 title = "GearCheck"
-description = "An offline-first Android app for photography and videography studios to track gear inventory, pack for events, verify returns, reuse event templates, and keep a reliable local event history."
+description = "Offline-first inventory and event packing for photo and video studios. Track packing and returns, use templates and a calendar, and delete each event after its result with no event archive."
 version = "1.0.0"
 id = "artifacts/gearcheck"
 router = "expo-domain"

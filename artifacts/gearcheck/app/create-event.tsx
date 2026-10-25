@@ -10,16 +10,22 @@ import type { EventDraft } from '@/types';
 
 export default function CreateEventScreen() {
   const colors = useColors();
-  const params = useLocalSearchParams<{ sourceEventId?: string }>();
-  const { data } = useGearCheck();
-  const source = data.events.find((event) => event.id === params.sourceEventId);
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState(source?.date ?? todayAsDateInput());
-  const [venue, setVenue] = useState('');
-  const [notes, setNotes] = useState('');
+  const params = useLocalSearchParams<{ sourceEventId?: string; id?: string; date?: string }>();
+  const { data, updateEvent } = useGearCheck();
+  const eventId = typeof params.id === 'string' ? params.id : undefined;
+  const sourceId = typeof params.sourceEventId === 'string' ? params.sourceEventId : undefined;
+  const calendarDate = typeof params.date === 'string' ? params.date : undefined;
+  const eventToEdit = data.events.find((event) => event.id === eventId);
+  const source = data.events.find((event) => event.id === sourceId);
+  const [title, setTitle] = useState(eventToEdit?.title ?? '');
+  const [date, setDate] = useState(eventToEdit?.date ?? calendarDate ?? source?.date ?? todayAsDateInput());
+  const [time, setTime] = useState(eventToEdit?.time ?? source?.time ?? '17:00');
+  const [venue, setVenue] = useState(eventToEdit?.venue ?? '');
+  const [notes, setNotes] = useState(eventToEdit?.notes ?? '');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const continueToGear = () => {
+  const saveOrContinue = async () => {
     const cleanTitle = title.trim();
     const parsedDate = parseLocalDate(date);
     if (!cleanTitle) {
@@ -30,13 +36,33 @@ export default function CreateEventScreen() {
       setError('Enter a valid date in YYYY-MM-DD format.');
       return;
     }
+    if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      setError('Enter a valid 24-hour time, such as 17:30.');
+      return;
+    }
     const today = parseLocalDate(todayAsDateInput());
-    if (today && parsedDate < today) {
+    if (!eventToEdit && today && parsedDate < today) {
       setError('Choose today or a future date.');
       return;
     }
-    const draft: EventDraft = { title: cleanTitle, date, venue: venue.trim(), notes: notes.trim() };
-    const initialGearIds = source?.gearSelections.map((item) => item.gearId).filter((id) => data.gear.some((gear) => gear.id === id)) ?? [];
+
+    const draft: EventDraft = { title: cleanTitle, date, time, venue: venue.trim(), notes: notes.trim() };
+    if (eventToEdit) {
+      setSaving(true);
+      try {
+        await updateEvent(eventToEdit.id, draft);
+        router.replace('/(tabs)/events');
+      } catch {
+        setError('The event could not be updated. Please try again.');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
+    const initialGearIds = source?.gearSelections
+      .map((item) => item.gearId)
+      .filter((id) => data.gear.some((gear) => gear.id === id)) ?? [];
     router.push({
       pathname: '/select-gear',
       params: {
@@ -47,7 +73,12 @@ export default function CreateEventScreen() {
   };
 
   return (
-    <Screen title="New event" subtitle="Add the details, then choose your gear" back scroll={false}>
+    <Screen
+      title={eventToEdit ? 'Edit event' : 'New event'}
+      subtitle={eventToEdit ? 'Update the event details' : 'Add the details, then choose your gear'}
+      back
+      scroll={false}
+    >
       <KeyboardAwareScrollViewCompat
         contentContainerStyle={{ paddingBottom: 34 }}
         keyboardShouldPersistTaps="handled"
@@ -80,7 +111,16 @@ export default function CreateEventScreen() {
               maxLength={10}
               accessibilityLabel="Event date in year month day format"
             />
-            <Text style={[styles.dateHint, { color: colors.mutedForeground }]}>Use year-month-day, for example 2026-10-24.</Text>
+            <Text style={[styles.hint, { color: colors.mutedForeground }]}>Use year-month-day, for example 2026-10-24.</Text>
+            <Input
+              label="Event time"
+              value={time}
+              onChangeText={(value) => { setTime(value); setError(''); }}
+              placeholder="17:30"
+              keyboardType="numbers-and-punctuation"
+              maxLength={5}
+              accessibilityLabel="Event time in 24-hour format"
+            />
             <Input
               label="Venue (optional)"
               value={venue}
@@ -96,9 +136,15 @@ export default function CreateEventScreen() {
               multiline
               maxLength={500}
             />
-            {error ? <Text style={[styles.error, { color: colors.destructive }]}>{error}</Text> : null}
+            {error ? <Text style={[styles.error, { color: colors.foreground }]}>{error}</Text> : null}
           </Card>
-          <Button title="Choose gear" icon="arrow-right" onPress={continueToGear} testID="continue-to-gear-button" />
+          <Button
+            title={eventToEdit ? 'Save changes' : 'Choose gear'}
+            icon={eventToEdit ? 'check' : 'arrow-right'}
+            onPress={saveOrContinue}
+            loading={saving}
+            testID="continue-to-gear-button"
+          />
         </PageContent>
       </KeyboardAwareScrollViewCompat>
     </Screen>
@@ -107,6 +153,6 @@ export default function CreateEventScreen() {
 
 const styles = StyleSheet.create({
   sourceText: { fontSize: 12, lineHeight: 18 },
-  dateHint: { fontSize: 11, marginTop: -6 },
+  hint: { fontSize: 10, marginTop: -7 },
   error: { fontSize: 12 },
 });

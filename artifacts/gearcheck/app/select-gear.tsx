@@ -14,9 +14,9 @@ export default function SelectGearScreen() {
   const draft = useMemo<EventDraft>(() => {
     try {
       const value = params.draft;
-      return typeof value === 'string' ? JSON.parse(value) as EventDraft : { title: '', date: '', venue: '', notes: '' };
+      return typeof value === 'string' ? JSON.parse(value) as EventDraft : { title: '', date: '', time: '17:00', venue: '', notes: '' };
     } catch {
-      return { title: '', date: '', venue: '', notes: '' };
+      return { title: '', date: '', time: '17:00', venue: '', notes: '' };
     }
   }, [params.draft]);
   const [selectedIds, setSelectedIds] = useState<string[]>(() => {

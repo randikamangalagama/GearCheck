@@ -25,6 +25,25 @@ export async function scheduleEventReminders(event: GearEvent) {
   if (Platform.OS === 'web') return [];
   const eventDate = parseLocalDate(event.date);
   if (!eventDate) return [];
+  const [hour, minute] = event.time.split(':').map(Number);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return [];
+  const eventStart = new Date(
+    eventDate.getFullYear(),
+    eventDate.getMonth(),
+    eventDate.getDate(),
+    hour,
+    minute,
+  );
+  let returnCheck = new Date(eventStart.getTime() + 4 * 60 * 60 * 1000);
+  if (returnCheck.getHours() >= 22 || returnCheck.getHours() < 7) {
+    returnCheck = new Date(
+      returnCheck.getFullYear(),
+      returnCheck.getMonth(),
+      returnCheck.getDate() + 1,
+      9,
+      0,
+    );
+  }
 
   const reminders = [
     {
@@ -39,15 +58,9 @@ export async function scheduleEventReminders(event: GearEvent) {
       body: `Get your gear ready for ${event.title}.`,
     },
     {
-      date: new Date(
-        eventDate.getFullYear(),
-        eventDate.getMonth(),
-        eventDate.getDate(),
-        20,
-        0,
-      ),
+      date: returnCheck,
       title: 'Return check',
-      body: `Remember to check in your gear after ${event.title}.`,
+      body: `Don't forget the return check after ${event.title}.`,
     },
   ].filter((reminder) => reminder.date.getTime() > Date.now());
 

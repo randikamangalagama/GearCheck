@@ -26,12 +26,12 @@ function RootLayoutNav() {
   const colors = useColors();
   return (
     <>
-      <StatusBar style={colors.background === '#0E0F13' ? 'light' : 'dark'} />
+      <StatusBar style={colors.background === '#000000' ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: false,
           headerBackTitle: 'Back',
-          animation: 'slide_from_right',
+          animation: 'fade_from_bottom',
           contentStyle: { backgroundColor: colors.background },
         }}
       >
@@ -42,7 +42,6 @@ function RootLayoutNav() {
         <Stack.Screen name="select-gear" />
         <Stack.Screen name="pack-checklist" />
         <Stack.Screen name="return-checklist" />
-        <Stack.Screen name="event-details" />
         <Stack.Screen name="result" />
         <Stack.Screen name="templates" />
         <Stack.Screen name="save-template" />

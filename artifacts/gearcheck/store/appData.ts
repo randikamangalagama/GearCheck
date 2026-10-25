@@ -33,7 +33,9 @@ function normalizeData(raw: unknown): AppData {
     : raw as Partial<AppData> | undefined;
   if (!parsed || typeof parsed !== 'object') return freshData();
   const legacyEvents = Array.isArray(parsed.events) ? parsed.events : [];
-  const removedEvents = legacyEvents.filter((event) => event?.status === 'completed');
+  const removedEvents = legacyEvents.filter(
+    (event) => (event as unknown as { status?: string }).status === 'completed',
+  );
   if (removedEvents.length > 0) {
     void Promise.all(removedEvents.map((event) => cancelReminderIds(event.reminderIds ?? []))).catch(() => undefined);
   }
@@ -45,7 +47,7 @@ function normalizeData(raw: unknown): AppData {
         : DEFAULT_CATEGORIES,
     gear: Array.isArray(parsed.gear) ? parsed.gear : [],
     events: legacyEvents
-      .filter((event) => event?.status !== 'completed')
+      .filter((event) => (event as unknown as { status?: string }).status !== 'completed')
       .map((event) => ({
         ...event,
         time: typeof event.time === 'string' ? event.time : '12:00',

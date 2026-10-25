@@ -55,7 +55,7 @@ function FloatingTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           <View style={[styles.indicator, { backgroundColor: colors.primary }]} />
         </Animated.View>
         <View style={styles.tabItems}>
-          {state.routes.map((route, index) => {
+          {state.routes.map((route: { key: string; name: string; params?: Record<string, unknown> }, index: number) => {
             const item = tabItems[route.name as keyof typeof tabItems];
             if (!item) return null;
             const focused = state.index === index;
